@@ -190,7 +190,7 @@ router.post("/:id/reset-password", requireAdminRole, async (req, res) => {
     if (!user)
       return res.status(404).json({ success: false, error: "User not found" });
 
-    const newPassword = generateTemporaryPassword();
+    const newPassword = req.body.newPassword || generateTemporaryPassword();
     const hashed = await hashPassword(newPassword);
     await user.update({ password: hashed });
 
