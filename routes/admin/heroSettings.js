@@ -4,8 +4,8 @@
 
 import express from "express";
 import { adminAuth, requireAdminRole } from "../../middlewares/adminAuth.js";
-import { GridFSBucket } from "mongodb";
 import mongoose from "mongoose";
+const { GridFSBucket } = mongoose.mongo;
 import multer from "multer";
 import { Readable } from "stream";
 import { logSettingsActivity } from "../../services/activityLog.service.js";

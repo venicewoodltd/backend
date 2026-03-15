@@ -10,11 +10,12 @@ import {
   Project,
   Blog,
   Testimonial,
+  AdminUser,
 } from "../models/postgres/index.js";
 import connectMongoDB from "../config/mongodb.js";
 import Media from "../models/mongodb/Media.js";
 import mongoose from "mongoose";
-import { GridFSBucket } from "mongodb";
+const { GridFSBucket } = mongoose.mongo;
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
@@ -52,6 +53,13 @@ async function run() {
   const referencedFileIds = new Set(
     allMedia.filter((m) => m.fileId).map((m) => m.fileId.toString()),
   );
+  // Also protect profile picture file IDs
+  const adminUsers = await AdminUser.findAll({
+    attributes: ["id", "photoFileId"],
+  });
+  for (const u of adminUsers) {
+    if (u.photoFileId) referencedFileIds.add(u.photoFileId);
+  }
   const unreferencedFiles = allFiles.filter(
     (f) => !referencedFileIds.has(f._id.toString()),
   );

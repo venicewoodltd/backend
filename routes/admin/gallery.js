@@ -4,7 +4,7 @@
 
 import express from "express";
 import mongoose from "mongoose";
-import { GridFSBucket } from "mongodb";
+const { GridFSBucket } = mongoose.mongo;
 import Media from "../../models/mongodb/Media.js";
 import { sequelize } from "../../models/postgres/index.js";
 import { adminAuth, requireAdminRole } from "../../middlewares/adminAuth.js";
@@ -16,7 +16,7 @@ router.use(adminAuth);
 // GET / — All images with associations
 router.get("/", async (req, res) => {
   try {
-    const { Product, Project, Blog, Testimonial } = sequelize.models;
+    const { Product, Project, Blog, Testimonial, AdminUser } = sequelize.models;
     const filesCollection = mongoose.connection.db.collection("images.files");
     const heroFilesCollection =
       mongoose.connection.db.collection("heroImages.files");
@@ -29,6 +29,7 @@ router.get("/", async (req, res) => {
       projects,
       blogs,
       testimonials,
+      adminUsers,
     ] = await Promise.all([
       filesCollection.find({}).sort({ uploadDate: -1 }).toArray(),
       heroFilesCollection.find({}).sort({ uploadDate: -1 }).toArray(),
@@ -37,6 +38,7 @@ router.get("/", async (req, res) => {
       Project.findAll({ attributes: ["id", "name", "title", "slug"] }),
       Blog.findAll({ attributes: ["id", "title", "slug"] }),
       Testimonial.findAll({ attributes: ["id", "author", "image"] }),
+      AdminUser.findAll({ attributes: ["id", "name", "photoFileId"] }),
     ]);
 
     // Build lookup maps
@@ -65,6 +67,11 @@ router.get("/", async (req, res) => {
       testimonials
         .filter((t) => t.image)
         .map((t) => [t.image, { id: t.id, name: t.author }]),
+    );
+    const profilePicByFileId = Object.fromEntries(
+      adminUsers
+        .filter((u) => u.photoFileId)
+        .map((u) => [u.photoFileId, { id: u.id, name: u.name }]),
     );
 
     const images = gridfsFiles.map((file) => {
@@ -116,6 +123,15 @@ router.get("/", async (req, res) => {
           entityId: testimonialByImage[fid].id,
           entityName: testimonialByImage[fid].name,
           imageType: "main",
+        });
+      }
+
+      if (profilePicByFileId[fid]) {
+        associations.push({
+          entityType: "profile",
+          entityId: profilePicByFileId[fid].id,
+          entityName: profilePicByFileId[fid].name,
+          imageType: "profile",
         });
       }
 
@@ -178,7 +194,7 @@ router.get("/", async (req, res) => {
 // DELETE /cleanup/orphaned — MUST be before /:fileId to avoid param matching
 router.delete("/cleanup/orphaned", requireAdminRole, async (req, res) => {
   try {
-    const { Product, Project, Blog, Testimonial } = sequelize.models;
+    const { Product, Project, Blog, Testimonial, AdminUser } = sequelize.models;
     const filesCollection = mongoose.connection.db.collection("images.files");
 
     const [
@@ -188,6 +204,7 @@ router.delete("/cleanup/orphaned", requireAdminRole, async (req, res) => {
       projects,
       blogs,
       testimonials,
+      adminUsers,
     ] = await Promise.all([
       filesCollection.find({}).toArray(),
       Media.find({}),
@@ -195,6 +212,7 @@ router.delete("/cleanup/orphaned", requireAdminRole, async (req, res) => {
       Project.findAll({ attributes: ["id"] }),
       Blog.findAll({ attributes: ["id"] }),
       Testimonial.findAll({ attributes: ["id", "image"] }),
+      AdminUser.findAll({ attributes: ["id", "photoFileId"] }),
     ]);
 
     const existingIds = {
@@ -217,6 +235,9 @@ router.delete("/cleanup/orphaned", requireAdminRole, async (req, res) => {
       if (hasValid && m.fileId) validFileIds.add(m.fileId.toString());
     }
     for (const fid of testimonialImageIds) validFileIds.add(fid);
+    for (const u of adminUsers) {
+      if (u.photoFileId) validFileIds.add(u.photoFileId);
+    }
 
     const orphaned = gridfsFiles.filter(
       (f) => !validFileIds.has(f._id.toString()),

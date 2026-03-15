@@ -234,6 +234,8 @@ export const productResolvers = {
         "dimensions",
         "specifications",
         "features",
+        "whatsappText",
+        "emailText",
       ];
       for (const key of allowed) {
         if (input[key] !== undefined)
@@ -372,6 +374,8 @@ export const productTypeDefs = `
     longDescription: String
     specifications: [Specification]
     features: [String]
+    whatsappText: String
+    emailText: String
   }
 
   input ProductInput {
@@ -395,6 +399,8 @@ export const productTypeDefs = `
     features: [String]
     tags: [String]
     seoData: String
+    whatsappText: String
+    emailText: String
   }
 
   type ProductResponse {

@@ -48,6 +48,8 @@ const Product = sequelize.define(
     dimensions: { type: DataTypes.JSONB },
     specifications: { type: DataTypes.JSONB, defaultValue: [] },
     features: { type: DataTypes.JSONB, defaultValue: [] },
+    whatsappText: { type: DataTypes.TEXT },
+    emailText: { type: DataTypes.TEXT },
     createdBy: { type: DataTypes.UUID },
     views: { type: DataTypes.INTEGER, defaultValue: 0 },
   },
