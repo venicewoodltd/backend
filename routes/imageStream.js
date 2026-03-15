@@ -12,14 +12,19 @@ const router = express.Router();
 
 // CORS middleware for image routes
 router.use((req, res, next) => {
+  const isProduction = process.env.NODE_ENV === "production";
   const allowedOrigins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
     ...(process.env.CLIENT_URL
       ? process.env.CLIENT_URL.split(",").map((u) => u.trim())
       : []),
+    ...(isProduction
+      ? []
+      : [
+          "http://localhost:3000",
+          "http://localhost:3001",
+          "http://127.0.0.1:3000",
+          "http://127.0.0.1:3001",
+        ]),
   ].filter(Boolean);
 
   const origin = req.headers.origin;

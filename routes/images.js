@@ -15,7 +15,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: parseInt(process.env.MAX_IMAGE_SIZE) || 10 * 1024 * 1024,
+    fileSize: (parseInt(process.env.MAX_IMAGE_SIZE_MB) || 10) * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     const allowed = [
@@ -87,7 +87,7 @@ router.post(
       });
       res.status(500).json({
         success: false,
-        error: error.message || "Image upload failed",
+        error: "Image upload failed",
       });
     }
   },

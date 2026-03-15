@@ -77,7 +77,7 @@ const PORT = parseInt(process.env.PORT, 10) || 4000;
 async function startServer() {
   try {
     // PostgreSQL
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     logger.info("PostgreSQL connected and synced");
 
     // MongoDB
@@ -113,7 +113,7 @@ async function startServer() {
     app.use("/api/track-visit", apiLimiter, publicTrackVisitRoutes);
 
     /* ── Admin routes ── */
-    app.use("/api/admin/auth", adminAuthRoutes);
+    app.use("/api/admin/auth", adminLimiter, adminAuthRoutes);
     app.use("/api/admin/users", adminLimiter, adminUserRoutes);
     app.use("/api/admin/products", adminLimiter, adminProductRoutes);
     app.use("/api/admin/projects", adminLimiter, adminProjectRoutes);
