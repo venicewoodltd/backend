@@ -8,9 +8,13 @@ import mongoose from "mongoose";
 const { GridFSBucket } = mongoose.mongo;
 import multer from "multer";
 import { Readable } from "stream";
+import sharp from "sharp";
 import { logSettingsActivity } from "../../services/activityLog.service.js";
 import { saveImageToGridFS } from "../../services/upload.service.js";
 import logger from "../../config/logger.js";
+
+const HERO_MAX_WIDTH = 1920;
+const HERO_QUALITY = 85;
 
 const router = express.Router();
 const upload = multer({
@@ -110,23 +114,38 @@ router.post(
       const uploadedFiles = [];
 
       for (const file of req.files) {
+        // Process image with sharp to optimize size
+        let processedBuffer;
+        try {
+          processedBuffer = await sharp(file.buffer, { failOn: "none" })
+            .rotate()
+            .resize(HERO_MAX_WIDTH, null, {
+              fit: "inside",
+              withoutEnlargement: true,
+            })
+            .jpeg({ quality: HERO_QUALITY, mozjpeg: true })
+            .toBuffer();
+        } catch {
+          processedBuffer = file.buffer;
+        }
+
         const uploadStream = bucket.openUploadStream(file.originalname, {
           metadata: {
             originalName: file.originalname,
-            mimeType: file.mimetype,
+            mimeType: "image/jpeg",
             uploadedBy: req.admin.id,
             uploadedAt: new Date(),
           },
         });
 
         await new Promise((resolve, reject) => {
-          Readable.from([file.buffer])
+          Readable.from([processedBuffer])
             .pipe(uploadStream)
             .on("finish", () => {
               uploadedFiles.push({
                 fileId: uploadStream.id,
                 filename: file.originalname,
-                mimeType: file.mimetype,
+                mimeType: "image/jpeg",
               });
               resolve();
             })

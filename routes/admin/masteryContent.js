@@ -7,6 +7,8 @@ import { adminAuth, requireAdminRole } from "../../middlewares/adminAuth.js";
 import { MasteryContent } from "../../models/postgres/index.js";
 import { logSettingsActivity } from "../../services/activityLog.service.js";
 import logger from "../../config/logger.js";
+import mongoose from "mongoose";
+const { GridFSBucket } = mongoose.mongo;
 
 const router = express.Router();
 
@@ -153,6 +155,27 @@ router.put("/", adminAuth, requireAdminRole, async (req, res) => {
       defaults: definedFields,
     });
     if (!created) {
+      // Clean up old hero image from GridFS when a new one is provided
+      if (heroImage && content.heroImage && heroImage !== content.heroImage) {
+        try {
+          const oldMatch = content.heroImage.match(
+            /\/api\/images\/([a-f0-9]{24})$/,
+          );
+          if (oldMatch) {
+            const oldFileId = new mongoose.Types.ObjectId(oldMatch[1]);
+            const db = mongoose.connection.db;
+            const bucket = new GridFSBucket(db, { bucketName: "images" });
+            await bucket.delete(oldFileId);
+            logger.info("Deleted old mastery hero image from GridFS", {
+              fileId: oldMatch[1],
+            });
+          }
+        } catch (cleanupErr) {
+          logger.warn("Failed to delete old mastery hero image", {
+            error: cleanupErr.message,
+          });
+        }
+      }
       await content.update(definedFields);
     }
 
