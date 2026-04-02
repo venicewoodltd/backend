@@ -19,7 +19,8 @@
     "seed": "node scripts/seed.js",
     "create-admin": "node scripts/createDefaultAdmin.js",
     "backup": "node scripts/daily-backup.js",
-    "backup:daily": "node scripts/daily-backup.js"
+    "backup:daily": "node scripts/daily-backup.js",
+    "cron": "node scripts/cron-scheduler.js"
   },
   "dependencies": {
     "@apollo/server": "^4.10.0",

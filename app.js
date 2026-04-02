@@ -56,7 +56,9 @@ app.use(hpp());
 // 6. CORS - Strict origin whitelist
 // =============================================
 const allowedOrigins = [
-  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",").map((u) => u.trim()) : []),
+  ...(process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.split(",").map((u) => u.trim())
+    : []),
   ...(isProduction
     ? []
     : [
@@ -102,7 +104,9 @@ app.use(
               "'self'",
               "data:",
               "blob:",
-              ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
+              ...(process.env.CLIENT_URL
+                ? process.env.CLIENT_URL.split(",").map((u) => u.trim())
+                : []),
             ],
             connectSrc: ["'self'"],
             fontSrc: ["'self'"],
